@@ -66,9 +66,9 @@ def extract_captions(mode='factual'):
             line = line.replace('.', '')
             line = line.strip()
             text += line + ' '
-    
+
     else:
-        if mode=='humorous':
+        if mode == 'humorous':
             with open("data/humor/funny_train.txt", 'r') as f:
                 res = f.readlines()
         else:

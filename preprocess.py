@@ -21,7 +21,8 @@ def select_images(c_type='humor'):
 
     # move imgs
     for img_name in img_list:
-        shutil.copyfile('data/flickr30k_images/' + img_name, 'data/flickr7k_images/' + img_name)
+        shutil.copyfile('data/flickr30k_images/' + img_name,
+                        'data/flickr7k_images/' + img_name)
 
 
 def select_factual_captions():

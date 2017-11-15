@@ -2,12 +2,12 @@ import os
 import re
 import pickle
 import nltk
-import skimage.io, skimage.transform
+import skimage.io
+import skimage.transform
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from build_vocab import Vocab
-from constant import get_symbol_id
 
 
 class Flickr7kDataset(Dataset):
@@ -16,7 +16,7 @@ class Flickr7kDataset(Dataset):
         '''
         Args:
             data_dir: Direcutory with all the images
-            caption_file: Path to the factual caption file 
+            caption_file: Path to the factual caption file
             vocab: Vocab instance
             transform: Optional transform to be applied
         '''
@@ -47,11 +47,11 @@ class Flickr7kDataset(Dataset):
         img_name = self.imgname_caption_list[ix][0]
         img_name = os.path.join(self.img_dir, img_name)
         caption = self.imgname_caption_list[ix][1]
-        
+
         image = skimage.io.imread(img_name)
         if self.transform is not None:
             image = self.transform(image)
-        
+
         # convert caption to word ids
         r = re.compile("\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
@@ -63,7 +63,8 @@ class Flickr7kDataset(Dataset):
         return image, caption
 
 
-def get_data_loader(img_dir, caption_file, vocab, batch_size, transform=None, shuffle=False, num_workers=0):
+def get_data_loader(img_dir, caption_file, vocab, batch_size,
+                    transform=None, shuffle=False, num_workers=0):
     '''Return data_loader'''
     if transform is None:
         transform = transforms.Compose([
@@ -79,7 +80,7 @@ def get_data_loader(img_dir, caption_file, vocab, batch_size, transform=None, sh
                              num_workers=num_workers,
                              collate_fn=collate_fn)
     return data_loader
-    
+
 
 class Rescale:
     '''Rescale the image to a given size
@@ -106,12 +107,11 @@ class Rescale:
         return image
 
 
-
 def collate_fn(data):
     '''create minibatch tensors from data(list of tuple(image, caption))'''
-    data.sort(key=lambda x:len(x[1]), reverse=True)
+    data.sort(key=lambda x: len(x[1]), reverse=True)
     images, captions = zip(*data)
-    
+
     # images : tuple of 3D tensor -> 4D tensor
     images = torch.stack(images, 0)
 
@@ -126,13 +126,15 @@ def collate_fn(data):
 def pad_sequence(seq, max_len):
     seq = torch.cat((seq, torch.zeros(max_len - len(seq))))
     return seq
-    
+
 
 if __name__ == "__main__":
     with open("data/vocab.pkl", 'rb') as f:
         vocab = pickle.load(f)
 
-    data_loader = get_data_loader("data/flickr7k_images", "data/factual_train.txt", vocab, 3)
+    img_path = "data/flickr7k_images"
+    cap_path = "data/factual_train.txt"
+    data_loader = get_data_loader(img_path, cap_path, vocab, 3)
 
     for i, (images, captions, lengths) in enumerate(data_loader):
         print(i)
