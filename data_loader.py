@@ -15,7 +15,7 @@ class Flickr7kDataset(Dataset):
     def __init__(self, img_dir, caption_file, vocab, transform=None):
         '''
         Args:
-            data_dir: Direcutory with all the images
+            img_dir: Direcutory with all the images
             caption_file: Path to the factual caption file
             vocab: Vocab instance
             transform: Optional transform to be applied
@@ -63,6 +63,41 @@ class Flickr7kDataset(Dataset):
         return image, caption
 
 
+class FlickrStyle7kDataset(Dataset):
+    '''Styled caption dataset'''
+    def __init__(self, caption_file, vocab):
+        '''
+        Args:
+            caption_file: Path to styled caption file
+            vocab: Vocab instance
+        '''
+        self.caption_list = self._get_caption(caption_file)
+        self.vocab = vocab
+
+    def _get_caption(self, caption_file):
+        '''extract caption list from styled caption file'''
+        with open(caption_file, 'r') as f:
+            caption_list = f.readlines()
+
+        caption_list = [x.strip() for x in caption_list]
+        return caption_list
+
+    def __len__(self):
+        return len(self.caption_list)
+
+    def __getitem__(self, ix):
+        caption = self.caption_list[ix]
+        # convert caption to word ids
+        r = re.compile("\.")
+        tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
+        caption = []
+        caption.append(self.vocab('<s>'))
+        caption.extend([self.vocab(token) for token in tokens])
+        caption.append(self.vocab('</s>'))
+        caption = torch.Tensor(caption)
+        return caption
+
+
 def get_data_loader(img_dir, caption_file, vocab, batch_size,
                     transform=None, shuffle=False, num_workers=0):
     '''Return data_loader'''
@@ -79,6 +114,19 @@ def get_data_loader(img_dir, caption_file, vocab, batch_size,
                              shuffle=shuffle,
                              num_workers=num_workers,
                              collate_fn=collate_fn)
+    return data_loader
+
+
+def get_styled_data_loader(caption_file, vocab, batch_size,
+                           shuffle=False, num_workers=0):
+    '''Return data_loader for styled caption'''
+    flickr_styled_7k = FlickrStyle7kDataset(caption_file, vocab)
+
+    data_loader = DataLoader(dataset=flickr_styled_7k,
+                             batch_size=batch_size,
+                             shuffle=shuffle,
+                             num_workers=num_workers,
+                             collate_fn=collate_fn_styled)
     return data_loader
 
 
@@ -116,11 +164,22 @@ def collate_fn(data):
     images = torch.stack(images, 0)
 
     # captions : tuple of 1D Tensor -> 2D tensor
-    lengths = [len(cap) for cap in captions]
+    lengths = torch.LongTensor([len(cap) for cap in captions])
     captions = [pad_sequence(cap, max(lengths)) for cap in captions]
     captions = torch.stack(captions, 0)
 
     return images, captions, lengths
+
+
+def collate_fn_styled(captions):
+    captions.sort(key=lambda x: len(x), reverse=True)
+
+    # tuple of 1D Tensor -> 2D Tensor
+    lengths = torch.LongTensor([len(cap) for cap in captions])
+    captions = [pad_sequence(cap, max(lengths)) for cap in captions]
+    captions = torch.stack(captions, 0)
+
+    return captions, lengths
 
 
 def pad_sequence(seq, max_len):
@@ -134,13 +193,15 @@ if __name__ == "__main__":
 
     img_path = "data/flickr7k_images"
     cap_path = "data/factual_train.txt"
+    cap_path_styled = "data/humor/funny_train.txt"
     data_loader = get_data_loader(img_path, cap_path, vocab, 3)
+    styled_data_loader = get_styled_data_loader(cap_path_styled, vocab, 3)
 
-    for i, (images, captions, lengths) in enumerate(data_loader):
+    for i, (captions, lengths) in enumerate(styled_data_loader):
         print(i)
-        print(images.shape)
-        print(captions)
-        print(lengths)
+        # print(images.shape)
+        print(captions[:, 1:])
+        print(lengths - 1)
         print()
         if i == 3:
             break
