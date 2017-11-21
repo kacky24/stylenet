@@ -1,9 +1,10 @@
 import re
 import shutil
 import os
+import random
 
 
-def select_images(c_type='humor'):
+def select_7k_images(c_type='humor'):
     '''30k -> 7k'''
     # open data/type/train.p
     with open('data/' + c_type + '/train.p', 'r') as f:
@@ -19,7 +20,7 @@ def select_images(c_type='humor'):
         line = line.group(0)[:-1] + '.jpg'
         img_list.append(line)
 
-    # move imgs
+    # copy imgs
     for img_name in img_list:
         shutil.copyfile('data/flickr30k_images/' + img_name,
                         'data/flickr7k_images/' + img_name)
@@ -43,6 +44,24 @@ def select_factual_captions():
                 f.write(line)
 
 
+def random_select_test_images(num=100):
+    '''select test images randomly'''
+    # get filenames in flickr7k, 30k_images
+    filenames_7k = os.listdir('data/flickr7k_images/')
+    filenames_30k = os.listdir('data/flickr30k_images')
+
+    filenames = list(set(filenames_30k) - set(filenames_7k))
+    print("img_num: " + str(len(filenames)))
+    random.seed(24)
+    selected = random.sample(filenames, num)
+
+    # copy images
+    for img_name in selected:
+        shutil.copyfile('data/flickr30k_images/' + img_name,
+                        'data/flickr7k_images/' + img_name)
+
+
 if __name__ == '__main__':
     # select_images()
-    select_factual_captions()
+    # select_factual_captions()
+    random_select_test_images()
