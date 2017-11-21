@@ -58,10 +58,10 @@ def random_select_test_images(num=100):
     # copy images
     for img_name in selected:
         shutil.copyfile('data/flickr30k_images/' + img_name,
-                        'data/flickr7k_images/' + img_name)
+                        'test_images/' + img_name)
 
 
 if __name__ == '__main__':
-    # select_images()
+    # select_7k_images()
     # select_factual_captions()
     random_select_test_images()
