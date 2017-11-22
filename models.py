@@ -4,6 +4,7 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 from torch.autograd import Variable
+from constant import get_symbol_id
 
 
 class EncoderCNN(nn.Module):
@@ -138,3 +139,63 @@ class FactoredLSTM(nn.Module):
         all_outputs = torch.stack(all_outputs, 1)
 
         return all_outputs
+
+    def sample(self, feature, beam_size=5, max_len=30, mode="factual"):
+        '''
+        generate captions from feature vectors with beam search
+
+        Args:
+            features: fixed vector for an image, [1, emb_dim]
+            beam_size: stock size for beam search
+            max_len: max sampling length
+            mode: type of caption to generate
+        '''
+        # initialize hidden state
+        h_t = Variable(torch.zeros(1, self.hidden_dim))
+        c_t = Variable(torch.zeros(1, self.hidden_dim))
+
+        # if torch.cuda.is_available():
+        #     h_t = h_t.cuda()
+        #     c_t = c_t.cuda()
+
+        # forward 1 step
+        _, h_t, c_t = self.forward_step(feature, h_t, c_t, mode=mode)
+
+        # candidates: [score, decoded_sequence, h_t, c_t]
+        symbol_id = torch.LongTensor([1]).unsqueeze(0)
+        symbol_id = Variable(symbol_id, volatile=True)
+        # if torch.cuda.is_available():
+        #     symbol_id = symbol_id.cuda()
+        candidates = [[0, symbol_id, h_t, c_t, [get_symbol_id('<s>')]]]
+
+        # beam search
+        t = 0
+        while t < max_len - 1:
+            t += 1
+            tmp_candidates = []
+            end_flag = True
+            for score, last_id, h_t, c_t, id_seq in candidates:
+                if id_seq[-1] == get_symbol_id('</s>'):
+                    tmp_candidates.append([score, last_id, h_t, c_t, id_seq])
+                else:
+                    end_flag = False
+                    emb = self.B(last_id)
+                    output, h_t, c_t = self.forward_step(emb, h_t, c_t, mode=mode)
+                    output = output.squeeze(0).squeeze(0)
+                    # log softmax
+                    output = F.log_softmax(output)
+                    output, indices = torch.sort(output, descending=True)
+                    output = output[:beam_size]
+                    indices = indices[:beam_size]
+                    score_list = score + output
+                    for score, wid in zip(score_list, indices):
+                        tmp_candidates.append(
+                            [score, wid, h_t, c_t, id_seq + [int(wid.data.numpy())]]
+                        )
+            if end_flag:
+                break
+            # sort by normarized log probs and pick beam_size highest candidate
+            candidates = sorted(tmp_candidates,
+                                key=lambda x: -x[0].data.numpy()/len(x[-1]))[:beam_size]
+
+        return candidates[0][-1]

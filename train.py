@@ -90,7 +90,7 @@ def main():
             # print log
             if i % 10 == 0:
                 print("Epoch [%d/%d], LANG, Step [%d/%d], Loss: %.4f"
-                      % (epoch, epoch_num, i, total_lang_step, loss.data[0]))
+                      % (epoch + 1, epoch_num, i, total_lang_step, loss.data[0]))
 
         # save models
         torch.save(decoder.state_dict(),
