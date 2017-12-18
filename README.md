@@ -19,7 +19,7 @@ examples of generated captions
 - written by [Kota Kakiuchi](https://github.com/kacky24)
 
 ## Requirement
-- python 3.5
+- python 3.5.3
 - pytorch 0.2.0
 - torchvision 0.1.9
 - numpy 1.13.3
