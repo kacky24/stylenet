@@ -15,9 +15,17 @@ def to_var(x, volatile=False):
         x = x.cuda()
     return Variable(x, volatile=volatile)
 
+def eval_outputs(outputs, vocab):
+    # outputs: [batch, max_len - 1, vocab_size]
+    indices = torch.topk(outputs, 1)[1]
+    indices = indices.squeeze(2)
+    indices = indices.data
+    for i in range(len(indices)):
+        caption = [vocab.i2w[x] for x in indices[i]]
+        print(caption)
 
 def main():
-    model_path = "./pretrained_models/"
+    model_path = "./pretrained_models/shuffle2/"
     if not os.path.exists(model_path):
         os.makedirs(model_path)
 
@@ -30,8 +38,8 @@ def main():
     humorous_cap_path = "data/humor/funny_train.txt"
 
     # import data_loader
-    data_loader = get_data_loader(img_path, factual_cap_path, vocab, 64)
-    styled_data_loader = get_styled_data_loader(humorous_cap_path, vocab, 96)
+    data_loader = get_data_loader(img_path, factual_cap_path, vocab, 64, shuffle=True)
+    styled_data_loader = get_styled_data_loader(humorous_cap_path, vocab, 96, shuffle=True)
 
     # import models
     emb_dim = 300
@@ -55,7 +63,7 @@ def main():
     # train
     total_cap_step = len(data_loader)
     total_lang_step = len(styled_data_loader)
-    epoch_num = 15
+    epoch_num = 30
     for epoch in range(epoch_num):
         # caption
         for i, (images, captions, lengths) in enumerate(data_loader):
@@ -67,15 +75,17 @@ def main():
             encoder.zero_grad()
             features = encoder(images)
             outputs = decoder(captions, features, mode="factual")
-            loss = criterion(outputs, captions, lengths)
+            loss = criterion(outputs[:, 1:, :].contiguous(), captions[:, 1:].contiguous(), lengths - 1)
             loss.backward()
             optimizer_cap.step()
 
             # print log
-            if i % 50 == 0:
+            if i % 100 == 0:
                 print("Epoch [%d/%d], CAP, Step [%d/%d], Loss: %.4f"
                       % (epoch + 1, epoch_num, i, total_cap_step, loss.data[0]))
 
+        eval_outputs(outputs, vocab)
+            
         # language
         for i, (captions, lengths) in enumerate(styled_data_loader):
             captions = to_var(captions.long())
