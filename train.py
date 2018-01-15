@@ -10,11 +10,14 @@ from models import EncoderCNN
 from models import FactoredLSTM
 from loss import masked_cross_entropy
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+
 
 def to_var(x, volatile=False):
     if torch.cuda.is_available():
         x = x.cuda()
     return Variable(x, volatile=volatile)
+
 
 def eval_outputs(outputs, vocab):
     # outputs: [batch, max_len - 1, vocab_size]
@@ -24,6 +27,7 @@ def eval_outputs(outputs, vocab):
     for i in range(len(indices)):
         caption = [vocab.i2w[x] for x in indices[i]]
         print(caption)
+
 
 def main(args):
     model_path = args.model_path
@@ -40,9 +44,10 @@ def main(args):
 
     # import data_loader
     data_loader = get_data_loader(img_path, factual_cap_path, vocab,
-                                  args.caption_batch_size)
+                                  args.caption_batch_size, shuffle=True)
     styled_data_loader = get_styled_data_loader(humorous_cap_path, vocab,
-                                                args.language_batch_size)
+                                                args.language_batch_size,
+                                                shuffle=True)
 
     # import models
     emb_dim = args.emb_dim
@@ -78,17 +83,19 @@ def main(args):
             encoder.zero_grad()
             features = encoder(images)
             outputs = decoder(captions, features, mode="factual")
-            loss = criterion(outputs[:, 1:, :].contiguous(), captions[:, 1:].contiguous(), lengths - 1)
+            loss = criterion(outputs[:, 1:, :].contiguous(),
+                             captions[:, 1:].contiguous(), lengths - 1)
             loss.backward()
             optimizer_cap.step()
 
             # print log
             if i % args.log_step_caption == 0:
                 print("Epoch [%d/%d], CAP, Step [%d/%d], Loss: %.4f"
-                      % (epoch+1, epoch_num, i, total_cap_step, loss.data[0]))
+                      % (epoch+1, epoch_num, i, total_cap_step,
+                          loss.data.mean()))
 
         eval_outputs(outputs, vocab)
-            
+
         # language
         for i, (captions, lengths) in enumerate(styled_data_loader):
             captions = to_var(captions.long())
@@ -103,7 +110,8 @@ def main(args):
             # print log
             if i % args.log_step_language == 0:
                 print("Epoch [%d/%d], LANG, Step [%d/%d], Loss: %.4f"
-                      % (epoch+1, epoch_num, i, total_lang_step, loss.data[0]))
+                      % (epoch+1, epoch_num, i, total_lang_step,
+                          loss.data.mean()))
 
         # save models
         torch.save(decoder.state_dict(),
