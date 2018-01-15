@@ -2,3 +2,4 @@ data
 .python-version
 __pycache__
 pretrained_models
+.ipynb_checkpoints
