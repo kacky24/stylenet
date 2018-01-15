@@ -22,6 +22,8 @@ class EncoderCNN(nn.Module):
         '''Extract the image feature vectors'''
         features = self.resnet(images)
         features = Variable(features.data)
+        # if torch.cuda.is_available():
+        #     features = features.cuda()
         features = features.view(features.size(0), -1)
         features = self.A(features)
         return features
@@ -122,8 +124,10 @@ class FactoredLSTM(nn.Module):
             embedded = torch.cat((features.unsqueeze(1), embedded), 1)
 
         # initialize hidden state
-        h_t = Variable(torch.zeros(batch_size, self.hidden_dim))
-        c_t = Variable(torch.zeros(batch_size, self.hidden_dim))
+        h_t = Variable(torch.Tensor(batch_size, self.hidden_dim))
+        c_t = Variable(torch.Tensor(batch_size, self.hidden_dim))
+        nn.init.uniform(h_t)
+        nn.init.uniform(c_t)
 
         if torch.cuda.is_available():
             h_t = h_t.cuda()
@@ -151,8 +155,10 @@ class FactoredLSTM(nn.Module):
             mode: type of caption to generate
         '''
         # initialize hidden state
-        h_t = Variable(torch.zeros(1, self.hidden_dim))
-        c_t = Variable(torch.zeros(1, self.hidden_dim))
+        h_t = Variable(torch.Tensor(1, self.hidden_dim))
+        c_t = Variable(torch.Tensor(1, self.hidden_dim))
+        nn.init.uniform(h_t)
+        nn.init.uniform(c_t)
 
         # if torch.cuda.is_available():
         #     h_t = h_t.cuda()
