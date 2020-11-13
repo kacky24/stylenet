@@ -11,27 +11,25 @@ from torchvision import transforms
 
 
 class Flickr7kDataset(Dataset):
-    '''Flickr7k dataset'''
     def __init__(self, img_dir, caption_file, vocab, transform=None):
-        '''
+        """
         Args:
             img_dir: Direcutory with all the images
             caption_file: Path to the factual caption file
             vocab: Vocab instance
             transform: Optional transform to be applied
-        '''
+        """
         self.img_dir = img_dir
         self.imgname_caption_list = self._get_imgname_and_caption(caption_file)
         self.vocab = vocab
         self.transform = transform
 
     def _get_imgname_and_caption(self, caption_file):
-        '''extract image name and caption from factual caption file'''
-        with open(caption_file, 'r') as f:
+        with open(caption_file, "r") as f:
             res = f.readlines()
 
         imgname_caption_list = []
-        r = re.compile(r'#\d*')
+        r = re.compile(r"#\d*")
         for line in res:
             img_and_cap = r.split(line)
             img_and_cap = [x.strip() for x in img_and_cap]
@@ -43,7 +41,6 @@ class Flickr7kDataset(Dataset):
         return len(self.imgname_caption_list)
 
     def __getitem__(self, ix):
-        '''return one data pair (image and captioin)'''
         img_name = self.imgname_caption_list[ix][0]
         img_name = os.path.join(self.img_dir, img_name)
         caption = self.imgname_caption_list[ix][1]
@@ -56,27 +53,25 @@ class Flickr7kDataset(Dataset):
         r = re.compile("\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
         caption = []
-        caption.append(self.vocab('<s>'))
+        caption.append(self.vocab("<s>"))
         caption.extend([self.vocab(token) for token in tokens])
-        caption.append(self.vocab('</s>'))
+        caption.append(self.vocab("</s>"))
         caption = torch.Tensor(caption)
         return image, caption
 
 
 class FlickrStyle7kDataset(Dataset):
-    '''Styled caption dataset'''
     def __init__(self, caption_file, vocab):
-        '''
+        """
         Args:
             caption_file: Path to styled caption file
             vocab: Vocab instance
-        '''
+        """
         self.caption_list = self._get_caption(caption_file)
         self.vocab = vocab
 
     def _get_caption(self, caption_file):
-        '''extract caption list from styled caption file'''
-        with open(caption_file, 'r') as f:
+        with open(caption_file, "r") as f:
             caption_list = f.readlines()
 
         caption_list = [x.strip() for x in caption_list]
@@ -91,16 +86,15 @@ class FlickrStyle7kDataset(Dataset):
         r = re.compile("\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
         caption = []
-        caption.append(self.vocab('<s>'))
+        caption.append(self.vocab("<s>"))
         caption.extend([self.vocab(token) for token in tokens])
-        caption.append(self.vocab('</s>'))
+        caption.append(self.vocab("</s>"))
         caption = torch.Tensor(caption)
         return caption
 
 
 def get_data_loader(img_dir, caption_file, vocab, batch_size,
                     transform=None, shuffle=False, num_workers=0):
-    '''Return data_loader'''
     if transform is None:
         transform = transforms.Compose([
             Rescale((224, 224)),
@@ -119,7 +113,6 @@ def get_data_loader(img_dir, caption_file, vocab, batch_size,
 
 def get_styled_data_loader(caption_file, vocab, batch_size,
                            shuffle=False, num_workers=0):
-    '''Return data_loader for styled caption'''
     flickr_styled_7k = FlickrStyle7kDataset(caption_file, vocab)
 
     data_loader = DataLoader(dataset=flickr_styled_7k,
@@ -130,11 +123,12 @@ def get_styled_data_loader(caption_file, vocab, batch_size,
     return data_loader
 
 
-class Rescale:
-    '''Rescale the image to a given size
+class Rescale(object):
+    """
+    Rescale the image to a given size
     Args:
         output_size(int or tuple)
-    '''
+    """
     def __init__(self, output_size):
         assert isinstance(output_size, (int, tuple))
         self.output_size = output_size
@@ -156,7 +150,9 @@ class Rescale:
 
 
 def collate_fn(data):
-    '''create minibatch tensors from data(list of tuple(image, caption))'''
+    """
+    create minibatch tensors from data(list of tuple(image, caption))
+    """
     data.sort(key=lambda x: len(x[1]), reverse=True)
     images, captions = zip(*data)
 
@@ -188,7 +184,7 @@ def pad_sequence(seq, max_len):
 
 
 if __name__ == "__main__":
-    with open("data/vocab.pkl", 'rb') as f:
+    with open("data/vocab.pkl", "rb") as f:
         vocab = pickle.load(f)
 
     img_path = "data/flickr7k_images"

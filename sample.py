@@ -30,22 +30,22 @@ def load_sample_images(img_dir, transform):
 
 def main():
     # load vocablary
-    with open('data/vocab.pkl', 'rb') as f:
+    with open("data/vocab.pkl", "rb") as f:
         vocab = pickle.load(f)
 
     # build model
     encoder = EncoderCNN(300)
     decoder = FactoredLSTM(300, 512, 512, len(vocab))
 
-    encoder.load_state_dict(torch.load('pretrained_models/encoder-15.pkl'))
-    decoder.load_state_dict(torch.load('pretrained_models/decoder-15.pkl'))
+    encoder.load_state_dict(torch.load("pretrained_models/encoder-15.pkl"))
+    decoder.load_state_dict(torch.load("pretrained_models/decoder-15.pkl"))
 
     # prepare images
     transform = transforms.Compose([
         Rescale((224, 224)),
         transforms.ToTensor()
     ])
-    img_names, img_list = load_sample_images('sample_images/', transform)
+    img_names, img_list = load_sample_images("sample_images/", transform)
     image = to_var(img_list[30], volatile=True)
 
     # if torch.cuda.is_available():
@@ -61,5 +61,5 @@ def main():
     print(caption)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

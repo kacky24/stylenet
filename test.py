@@ -11,7 +11,7 @@ from loss import masked_cross_entropy
 
 
 def main():
-    with open("data/vocab.pkl", 'rb') as f:
+    with open("data/vocab.pkl", "rb") as f:
         vocab = pickle.load(f)
 
     # img_path = "data/flickr7k_images"
@@ -50,5 +50,5 @@ def main():
         break
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

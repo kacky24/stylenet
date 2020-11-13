@@ -53,7 +53,7 @@ def masked_cross_entropy(logits, target, length):
     return loss
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     length = torch.LongTensor([23, 21, 17])
     length = Variable(length)
 

@@ -10,9 +10,9 @@ from constant import get_symbol_id
 
 class EncoderCNN(nn.Module):
     def __init__(self, emb_dim):
-        '''
+        """
         Load the pretrained ResNet152 and replace fc
-        '''
+        """
         super(EncoderCNN, self).__init__()
         resnet = models.resnet152(pretrained=True)
         modules = list(resnet.children())[:-1]
@@ -20,7 +20,6 @@ class EncoderCNN(nn.Module):
         self.A = nn.Linear(resnet.fc.in_features, emb_dim)
 
     def forward(self, images):
-        '''Extract the image feature vectors'''
         features = self.resnet(images)
         features = Variable(features.data)
         # if torch.cuda.is_available():
@@ -110,12 +109,12 @@ class FactoredLSTM(nn.Module):
         return outputs, h_t, c_t
 
     def forward(self, captions, features=None, mode="factual"):
-        '''
+        """
         Args:
             features: fixed vectors from images, [batch, emb_dim]
             captions: [batch, max_len]
             mode: type of caption to generate
-        '''
+        """
         batch_size = captions.size(0)
         embedded = self.B(captions)  # [batch, max_len, emb_dim]
         # concat features and captions
@@ -146,7 +145,7 @@ class FactoredLSTM(nn.Module):
         return all_outputs
 
     def sample(self, feature, beam_size=5, max_len=30, mode="factual"):
-        '''
+        """
         generate captions from feature vectors with beam search
 
         Args:
@@ -154,7 +153,7 @@ class FactoredLSTM(nn.Module):
             beam_size: stock size for beam search
             max_len: max sampling length
             mode: type of caption to generate
-        '''
+        """
         # initialize hidden state
         h_t = Variable(torch.Tensor(1, self.hidden_dim))
         c_t = Variable(torch.Tensor(1, self.hidden_dim))
@@ -173,7 +172,7 @@ class FactoredLSTM(nn.Module):
         symbol_id = Variable(symbol_id, volatile=True)
         # if torch.cuda.is_available():
         #     symbol_id = symbol_id.cuda()
-        candidates = [[0, symbol_id, h_t, c_t, [get_symbol_id('<s>')]]]
+        candidates = [[0, symbol_id, h_t, c_t, [get_symbol_id("<s>")]]]
 
         # beam search
         t = 0
@@ -182,7 +181,7 @@ class FactoredLSTM(nn.Module):
             tmp_candidates = []
             end_flag = True
             for score, last_id, h_t, c_t, id_seq in candidates:
-                if id_seq[-1] == get_symbol_id('</s>'):
+                if id_seq[-1] == get_symbol_id("</s>"):
                     tmp_candidates.append([score, last_id, h_t, c_t, id_seq])
                 else:
                     end_flag = False
