@@ -4,6 +4,7 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 from torch.autograd import Variable
+
 from constant import get_symbol_id
 
 
@@ -30,7 +31,7 @@ class EncoderCNN(nn.Module):
 
 
 class FactoredLSTM(nn.Module):
-    def __init__(self, emb_dim, hidden_dim, factored_dim,  vocab_size):
+    def __init__(self, emb_dim, hidden_dim, factored_dim, vocab_size):
         super(FactoredLSTM, self).__init__()
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -201,7 +202,9 @@ class FactoredLSTM(nn.Module):
             if end_flag:
                 break
             # sort by normarized log probs and pick beam_size highest candidate
-            candidates = sorted(tmp_candidates,
-                                key=lambda x: -x[0].data.numpy()/len(x[-1]))[:beam_size]
+            candidates = sorted(
+                tmp_candidates,
+                key=lambda x: -x[0].data.numpy() / len(x[-1])
+            )[:beam_size]
 
         return candidates[0][-1]

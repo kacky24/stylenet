@@ -1,9 +1,10 @@
+import argparse
 import os
 import pickle
-import argparse
+
 import torch
 from torch.autograd import Variable
-from build_vocab import Vocab
+
 from data_loader import get_data_loader
 from data_loader import get_styled_data_loader
 from models import EncoderCNN
@@ -91,7 +92,7 @@ def main(args):
             # print log
             if i % args.log_step_caption == 0:
                 print("Epoch [%d/%d], CAP, Step [%d/%d], Loss: %.4f"
-                      % (epoch+1, epoch_num, i, total_cap_step,
+                      % (epoch + 1, epoch_num, i, total_cap_step,
                           loss.data.mean()))
 
         eval_outputs(outputs, vocab)
@@ -103,14 +104,14 @@ def main(args):
             # forward, backward and optimize
             decoder.zero_grad()
             outputs = decoder(captions, mode='humorous')
-            loss = criterion(outputs, captions[:, 1:].contiguous(), lengths-1)
+            loss = criterion(outputs, captions[:, 1:].contiguous(), lengths - 1)
             loss.backward()
             optimizer_lang.step()
 
             # print log
             if i % args.log_step_language == 0:
                 print("Epoch [%d/%d], LANG, Step [%d/%d], Loss: %.4f"
-                      % (epoch+1, epoch_num, i, total_lang_step,
+                      % (epoch + 1, epoch_num, i, total_lang_step,
                           loss.data.mean()))
 
         # save models
@@ -123,8 +124,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-            description='StyleNet: Generating Attractive Visual Captions \
-                        with Styles')
+        description='StyleNet: Generating Attractive Visual Captions \
+                     with Styles')
     parser.add_argument('--model_path', type=str, default='pretrained_models',
                         help='path for saving trained models')
     parser.add_argument('--vocab_path', type=str, default='./data/vocab.pkl',

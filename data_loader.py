@@ -1,13 +1,13 @@
 import os
-import re
 import pickle
+import re
+
 import nltk
 import skimage.io
 import skimage.transform
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-from build_vocab import Vocab
 
 
 class Flickr7kDataset(Dataset):
@@ -105,7 +105,7 @@ def get_data_loader(img_dir, caption_file, vocab, batch_size,
         transform = transforms.Compose([
             Rescale((224, 224)),
             transforms.ToTensor()
-            ])
+        ])
 
     flickr7k = Flickr7kDataset(img_dir, caption_file, vocab, transform)
 

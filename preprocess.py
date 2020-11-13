@@ -1,7 +1,7 @@
-import re
-import shutil
 import os
 import random
+import re
+import shutil
 
 
 def select_7k_images(c_type='humor'):

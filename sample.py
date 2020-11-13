@@ -1,10 +1,11 @@
 import os
 import pickle
+
 import skimage.io
 import torch
 from torch.autograd import Variable
 from torchvision import transforms
-from build_vocab import Vocab
+
 from data_loader import Rescale
 from models import EncoderCNN
 from models import FactoredLSTM
@@ -43,7 +44,7 @@ def main():
     transform = transforms.Compose([
         Rescale((224, 224)),
         transforms.ToTensor()
-        ])
+    ])
     img_names, img_list = load_sample_images('sample_images/', transform)
     image = to_var(img_list[30], volatile=True)
 

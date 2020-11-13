@@ -1,7 +1,8 @@
 import pickle
+
 import torch
 from torch.autograd import Variable
-from build_vocab import Vocab
+
 from data_loader import get_data_loader
 from data_loader import get_styled_data_loader
 from models import EncoderCNN
@@ -13,10 +14,10 @@ def main():
     with open("data/vocab.pkl", 'rb') as f:
         vocab = pickle.load(f)
 
-    img_path = "data/flickr7k_images"
-    cap_path = "data/factual_train.txt"
+    # img_path = "data/flickr7k_images"
+    # cap_path = "data/factual_train.txt"
     styled_path = "data/humor/funny_train.txt"
-    data_loader = get_data_loader(img_path, cap_path, vocab, 3)
+    # data_loader = get_data_loader(img_path, cap_path, vocab, 3)
     styled_data_loader = get_styled_data_loader(styled_path, vocab, 3)
 
     encoder = EncoderCNN(30)
