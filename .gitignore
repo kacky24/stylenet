@@ -1,5 +1,12 @@
+# custom
 data
+pretrained_models
+
+# python
 .python-version
 __pycache__
-pretrained_models
 .ipynb_checkpoints
+.venv
+
+# mac
+.DS_Store
