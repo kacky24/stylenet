@@ -6,5 +6,5 @@ SYMBOL_MAP = {
 }
 
 
-def get_symbol_id(symbol):
+def get_symbol_id(symbol: str) -> int:
     return SYMBOL_MAP[symbol]

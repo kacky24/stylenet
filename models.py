@@ -1,4 +1,5 @@
 import sys
+from typing import Tuple
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -9,7 +10,7 @@ from constant import get_symbol_id
 
 
 class EncoderCNN(nn.Module):
-    def __init__(self, emb_dim):
+    def __init__(self, emb_dim: int) -> None:
         """
         Load the pretrained ResNet152 and replace fc
         """
@@ -19,7 +20,7 @@ class EncoderCNN(nn.Module):
         self.resnet = nn.Sequential(*modules)
         self.A = nn.Linear(resnet.fc.in_features, emb_dim)
 
-    def forward(self, images):
+    def forward(self, images: torch.Tensor) -> torch.Tensor:
         features = self.resnet(images)
         features = Variable(features.data)
         # if torch.cuda.is_available():
@@ -30,7 +31,13 @@ class EncoderCNN(nn.Module):
 
 
 class FactoredLSTM(nn.Module):
-    def __init__(self, emb_dim, hidden_dim, factored_dim, vocab_size):
+    def __init__(
+        self,
+        emb_dim: int,
+        hidden_dim: int,
+        factored_dim: int,
+        vocab_size: int
+    ) -> None:
         super(FactoredLSTM, self).__init__()
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
@@ -72,7 +79,13 @@ class FactoredLSTM(nn.Module):
         # weight for output
         self.C = nn.Linear(hidden_dim, vocab_size)
 
-    def forward_step(self, embedded, h_0, c_0, mode):
+    def forward_step(
+        self,
+        embedded: torch.Tensor,
+        h_0: torch.Tensor,
+        c_0: torch.Tensor,
+        mode: str
+    ) -> Tuple[torch.Tensor]:
         i = self.V_i(embedded)
         f = self.V_f(embedded)
         o = self.V_o(embedded)
@@ -108,7 +121,12 @@ class FactoredLSTM(nn.Module):
 
         return outputs, h_t, c_t
 
-    def forward(self, captions, features=None, mode="factual"):
+    def forward(
+        self,
+        captions: torch.Tensor,
+        features: torch.Tensor = None,
+        mode: str = "factual"
+    ) -> torch.Tensor:
         """
         Args:
             features: fixed vectors from images, [batch, emb_dim]
@@ -144,7 +162,13 @@ class FactoredLSTM(nn.Module):
 
         return all_outputs
 
-    def sample(self, feature, beam_size=5, max_len=30, mode="factual"):
+    def sample(
+        self,
+        feature: torch.Tensor,
+        beam_size: int = 5,
+        max_len: int = 30,
+        mode: str = "factual"
+    ) -> torch.Tensor:
         """
         generate captions from feature vectors with beam search
 

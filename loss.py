@@ -1,9 +1,11 @@
+from typing import List
+
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 
 
-def sequence_mask(sequence_length, max_len=None):
+def sequence_mask(sequence_length: int, max_len: int = None) -> List[bool]:
     if max_len is None:
         max_len = sequence_length.data.max()
     batch_size = sequence_length.size(0)
@@ -17,7 +19,11 @@ def sequence_mask(sequence_length, max_len=None):
     return seq_range_expand < seq_length_expand
 
 
-def masked_cross_entropy(logits, target, length):
+def masked_cross_entropy(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    length: torch.Tensor
+) -> torch.Tensor:
     length = Variable(length)
     if torch.cuda.is_available():
         length = length.cuda()

@@ -10,7 +10,7 @@ from models import FactoredLSTM
 from loss import masked_cross_entropy
 
 
-def main():
+def main() -> None:
     with open("data/vocab.pkl", "rb") as f:
         vocab = pickle.load(f)
 

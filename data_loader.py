@@ -1,17 +1,27 @@
 import os
+from typing import Callable, List, Union, Tuple
 import pickle
 import re
 
 import nltk
+import numpy as np
 import skimage.io
 import skimage.transform
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
+from build_vocab import Vocab
+
 
 class Flickr7kDataset(Dataset):
-    def __init__(self, img_dir, caption_file, vocab, transform=None):
+    def __init__(
+        self,
+        img_dir: str,
+        caption_file: str,
+        vocab: Vocab,
+        transform: Callable[[np.ndarray], np.ndarray] = None
+    ) -> None:
         """
         Args:
             img_dir: Direcutory with all the images
@@ -24,7 +34,7 @@ class Flickr7kDataset(Dataset):
         self.vocab = vocab
         self.transform = transform
 
-    def _get_imgname_and_caption(self, caption_file):
+    def _get_imgname_and_caption(self, caption_file: str) -> List[str]:
         with open(caption_file, "r") as f:
             res = f.readlines()
 
@@ -37,10 +47,10 @@ class Flickr7kDataset(Dataset):
 
         return imgname_caption_list
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.imgname_caption_list)
 
-    def __getitem__(self, ix):
+    def __getitem__(self, ix: int) -> Tuple[torch.Tensor]:
         img_name = self.imgname_caption_list[ix][0]
         img_name = os.path.join(self.img_dir, img_name)
         caption = self.imgname_caption_list[ix][1]
@@ -61,7 +71,7 @@ class Flickr7kDataset(Dataset):
 
 
 class FlickrStyle7kDataset(Dataset):
-    def __init__(self, caption_file, vocab):
+    def __init__(self, caption_file: str, vocab: Vocab) -> None:
         """
         Args:
             caption_file: Path to styled caption file
@@ -70,17 +80,17 @@ class FlickrStyle7kDataset(Dataset):
         self.caption_list = self._get_caption(caption_file)
         self.vocab = vocab
 
-    def _get_caption(self, caption_file):
+    def _get_caption(self, caption_file: str) -> List[str]:
         with open(caption_file, "r") as f:
             caption_list = f.readlines()
 
         caption_list = [x.strip() for x in caption_list]
         return caption_list
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.caption_list)
 
-    def __getitem__(self, ix):
+    def __getitem__(self, ix: int) -> torch.Tensor:
         caption = self.caption_list[ix]
         # convert caption to word ids
         r = re.compile("\.")
@@ -93,8 +103,15 @@ class FlickrStyle7kDataset(Dataset):
         return caption
 
 
-def get_data_loader(img_dir, caption_file, vocab, batch_size,
-                    transform=None, shuffle=False, num_workers=0):
+def get_data_loader(
+    img_dir: str,
+    caption_file: str,
+    vocab: Vocab,
+    batch_size: int,
+    transform: Callable([np.ndarray], np.ndarray) = None,
+    shuffle=False,
+    num_workers=0
+) -> DataLoader:
     if transform is None:
         transform = transforms.Compose([
             Rescale((224, 224)),
@@ -111,8 +128,13 @@ def get_data_loader(img_dir, caption_file, vocab, batch_size,
     return data_loader
 
 
-def get_styled_data_loader(caption_file, vocab, batch_size,
-                           shuffle=False, num_workers=0):
+def get_styled_data_loader(
+    caption_file: str,
+    vocab: Vocab,
+    batch_size: int,
+    shuffle: bool = False,
+    num_workers: int = 0
+) -> DataLoader:
     flickr_styled_7k = FlickrStyle7kDataset(caption_file, vocab)
 
     data_loader = DataLoader(dataset=flickr_styled_7k,
@@ -129,11 +151,11 @@ class Rescale(object):
     Args:
         output_size(int or tuple)
     """
-    def __init__(self, output_size):
+    def __init__(self, output_size: Union[int, Tuple[int]]) -> None:
         assert isinstance(output_size, (int, tuple))
         self.output_size = output_size
 
-    def __call__(self, image):
+    def __call__(self, image: np.ndarray) -> np.ndarray:
         h, w = image.shape[:2]
         if isinstance(self.output_size, int):
             if h > w:
@@ -149,7 +171,7 @@ class Rescale(object):
         return image
 
 
-def collate_fn(data):
+def collate_fn(data: List[Tuple[np.ndarray]]) -> Tuple[torch.Tensor]:
     """
     create minibatch tensors from data(list of tuple(image, caption))
     """
@@ -167,7 +189,7 @@ def collate_fn(data):
     return images, captions, lengths
 
 
-def collate_fn_styled(captions):
+def collate_fn_styled(captions: List[np.ndarray]):
     captions.sort(key=lambda x: len(x), reverse=True)
 
     # tuple of 1D Tensor -> 2D Tensor
@@ -178,7 +200,7 @@ def collate_fn_styled(captions):
     return captions, lengths
 
 
-def pad_sequence(seq, max_len):
+def pad_sequence(seq: torch.Tensor, max_len: int) -> torch.Tensor:
     seq = torch.cat((seq, torch.zeros(max_len - len(seq))))
     return seq
 

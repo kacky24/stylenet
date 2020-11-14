@@ -1,7 +1,9 @@
 import os
 import pickle
+from typing import Callable, List, Union, Tuple
 
 import skimage.io
+import numpy as np
 import torch
 from torch.autograd import Variable
 from torchvision import transforms
@@ -17,7 +19,10 @@ def to_var(x, volatile=False):
     return Variable(x, volatile=volatile)
 
 
-def load_sample_images(img_dir, transform):
+def load_sample_images(
+    img_dir: str,
+    transform: Callable[[np.ndarray], np.ndarray]
+) -> Tuple[Union[List[str], List[np.ndarray]]]:
     img_names = os.listdir(img_dir)
     img_list = []
     for img_name in img_names:
@@ -28,7 +33,7 @@ def load_sample_images(img_dir, transform):
     return img_names, img_list
 
 
-def main():
+def main() -> None:
     # load vocablary
     with open("data/vocab.pkl", "rb") as f:
         vocab = pickle.load(f)

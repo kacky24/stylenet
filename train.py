@@ -5,6 +5,7 @@ import pickle
 import torch
 from torch.autograd import Variable
 
+from build_vocab import Vocab
 from data_loader import get_data_loader
 from data_loader import get_styled_data_loader
 from models import EncoderCNN
@@ -20,7 +21,7 @@ def to_var(x, volatile=False):
     return Variable(x, volatile=volatile)
 
 
-def eval_outputs(outputs, vocab):
+def eval_outputs(outputs: torch.Tensor, vocab: Vocab) -> None:
     # outputs: [batch, max_len - 1, vocab_size]
     indices = torch.topk(outputs, 1)[1]
     indices = indices.squeeze(2)
@@ -30,7 +31,7 @@ def eval_outputs(outputs, vocab):
         print(caption)
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     model_path = args.model_path
     if not os.path.exists(model_path):
         os.makedirs(model_path)

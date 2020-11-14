@@ -6,27 +6,27 @@ import nltk
 
 
 class Vocab(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.w2i = {}
         self.i2w = {}
         self.ix = 0
 
-    def add_word(self, word):
+    def add_word(self, word: str) -> None:
         if word not in self.w2i:
             self.w2i[word] = self.ix
             self.i2w[self.ix] = word
             self.ix += 1
 
-    def __call__(self, word):
+    def __call__(self, word: str) -> int:
         if word not in self.w2i:
-            return self.w2i['<unk>']
+            return self.w2i["<unk>"]
         return self.w2i[word]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.w2i)
 
 
-def build_vocab(mode_list=["factual", "humorous"]):
+def build_vocab(mode_list=["factual", "humorous"]) -> Vocab:
     # define vocabulary
     vocab = Vocab()
     # add special tokens
@@ -52,7 +52,7 @@ def build_vocab(mode_list=["factual", "humorous"]):
     return vocab
 
 
-def extract_captions(mode="factual"):
+def extract_captions(mode="factual") -> str:
     """extract captions from data files for building vocabulary"""
     text = ""
     if mode == "factual":

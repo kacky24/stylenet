@@ -4,7 +4,7 @@ import re
 import shutil
 
 
-def select_7k_images(c_type="humor"):
+def select_7k_images(c_type: str = "humor") -> None:
     """30k -> 7k"""
     # open data/type/train.p
     with open("data/" + c_type + "/train.p", "r") as f:
@@ -26,7 +26,7 @@ def select_7k_images(c_type="humor"):
                         "data/flickr7k_images/" + img_name)
 
 
-def select_factual_captions():
+def select_factual_captions() -> None:
     """30k -> 7k"""
     # get filenames in flickr7k_images
     filenames = os.listdir("data/flickr7k_images/")
@@ -44,7 +44,7 @@ def select_factual_captions():
                 f.write(line)
 
 
-def random_select_test_images(num=100):
+def random_select_test_images(num: int = 100) -> None:
     # get filenames in flickr7k, 30k_images
     filenames_7k = os.listdir("data/flickr7k_images/")
     filenames_30k = os.listdir("data/flickr30k_images")
