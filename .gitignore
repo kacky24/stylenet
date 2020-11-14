@@ -1,6 +1,6 @@
 # custom
-data
-pretrained_models
+/data
+/pretrained_models
 
 # python
 .python-version
