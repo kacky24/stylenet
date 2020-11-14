@@ -3,22 +3,14 @@ import os
 import pickle
 
 import torch
-from torch.autograd import Variable
 
-from build_vocab import Vocab
-from data_loader import get_data_loader
-from data_loader import get_styled_data_loader
-from models import EncoderCNN
-from models import FactoredLSTM
-from loss import masked_cross_entropy
+from src.data.loader import get_data_loader, get_styled_data_loader
+from src.models.decoder import FactoredLSTM
+from src.models.encoder import EncoderCNN
+from src.training.loss import masked_cross_entropy
+from src.utils.vocab import Vocab
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
-
-def to_var(x, volatile=False):
-    if torch.cuda.is_available():
-        x = x.cuda()
-    return Variable(x, volatile=volatile)
 
 
 def eval_outputs(outputs: torch.Tensor, vocab: Vocab) -> None:
@@ -77,9 +69,6 @@ def main(args: argparse.Namespace) -> None:
     for epoch in range(epoch_num):
         # caption
         for i, (images, captions, lengths) in enumerate(data_loader):
-            images = to_var(images, volatile=True)
-            captions = to_var(captions.long())
-
             # forward, backward and optimize
             decoder.zero_grad()
             encoder.zero_grad()
@@ -100,8 +89,6 @@ def main(args: argparse.Namespace) -> None:
 
         # language
         for i, (captions, lengths) in enumerate(styled_data_loader):
-            captions = to_var(captions.long())
-
             # forward, backward and optimize
             decoder.zero_grad()
             outputs = decoder(captions, mode="humorous")

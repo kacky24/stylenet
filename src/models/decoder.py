@@ -1,33 +1,11 @@
 import sys
 from typing import Tuple
+
 import torch
 import torch.nn as nn
-import torchvision.models as models
 import torch.nn.functional as F
-from torch.autograd import Variable
 
 from constant import get_symbol_id
-
-
-class EncoderCNN(nn.Module):
-    def __init__(self, emb_dim: int) -> None:
-        """
-        Load the pretrained ResNet152 and replace fc
-        """
-        super(EncoderCNN, self).__init__()
-        resnet = models.resnet152(pretrained=True)
-        modules = list(resnet.children())[:-1]
-        self.resnet = nn.Sequential(*modules)
-        self.A = nn.Linear(resnet.fc.in_features, emb_dim)
-
-    def forward(self, images: torch.Tensor) -> torch.Tensor:
-        features = self.resnet(images)
-        features = Variable(features.data)
-        # if torch.cuda.is_available():
-        #     features = features.cuda()
-        features = features.view(features.size(0), -1)
-        features = self.A(features)
-        return features
 
 
 class FactoredLSTM(nn.Module):
@@ -142,8 +120,8 @@ class FactoredLSTM(nn.Module):
             embedded = torch.cat((features.unsqueeze(1), embedded), 1)
 
         # initialize hidden state
-        h_t = Variable(torch.Tensor(batch_size, self.hidden_dim))
-        c_t = Variable(torch.Tensor(batch_size, self.hidden_dim))
+        h_t = torch.Tensor(batch_size, self.hidden_dim)
+        c_t = torch.Tensor(batch_size, self.hidden_dim)
         nn.init.uniform(h_t)
         nn.init.uniform(c_t)
 
@@ -179,8 +157,8 @@ class FactoredLSTM(nn.Module):
             mode: type of caption to generate
         """
         # initialize hidden state
-        h_t = Variable(torch.Tensor(1, self.hidden_dim))
-        c_t = Variable(torch.Tensor(1, self.hidden_dim))
+        h_t = torch.Tensor(1, self.hidden_dim)
+        c_t = torch.Tensor(1, self.hidden_dim)
         nn.init.uniform(h_t)
         nn.init.uniform(c_t)
 
@@ -193,7 +171,6 @@ class FactoredLSTM(nn.Module):
 
         # candidates: [score, decoded_sequence, h_t, c_t]
         symbol_id = torch.LongTensor([1]).unsqueeze(0)
-        symbol_id = Variable(symbol_id, volatile=True)
         # if torch.cuda.is_available():
         #     symbol_id = symbol_id.cuda()
         candidates = [[0, symbol_id, h_t, c_t, [get_symbol_id("<s>")]]]

@@ -1,13 +1,11 @@
 import pickle
 
 import torch
-from torch.autograd import Variable
 
-from data_loader import get_data_loader
-from data_loader import get_styled_data_loader
-from models import EncoderCNN
-from models import FactoredLSTM
-from loss import masked_cross_entropy
+from src.data.loader import get_data_loader, get_styled_data_loader
+from src.models.decoder import FactoredLSTM
+from src.models.encoder import EncoderCNN
+from src.training.loss import masked_cross_entropy
 
 
 def main() -> None:
@@ -29,9 +27,6 @@ def main() -> None:
 
     # for i, (images, captions, lengths) in enumerate(data_loader):
     for i, (captions, lengths) in enumerate(styled_data_loader):
-        # images = Variable(images, volatile=True)
-        captions = Variable(captions.long())
-
         if torch.cuda.is_available():
             # images = images.cuda()
             captions = captions.cuda()

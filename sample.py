@@ -1,22 +1,18 @@
 import os
 import pickle
-from typing import Callable, List, Union, Tuple
+from typing import Callable, List, Tuple, Union
+
+import numpy as np
 
 import skimage.io
-import numpy as np
+
 import torch
-from torch.autograd import Variable
+
 from torchvision import transforms
 
-from data_loader import Rescale
-from models import EncoderCNN
-from models import FactoredLSTM
-
-
-def to_var(x, volatile=False):
-    # if torch.cuda.is_available():
-    #     x = x.cuda()
-    return Variable(x, volatile=volatile)
+from src.data.transforms import Rescale
+from src.models.decoder import FactoredLSTM
+from src.models.encoder import EncoderCNN
 
 
 def load_sample_images(
@@ -51,7 +47,7 @@ def main() -> None:
         transforms.ToTensor()
     ])
     img_names, img_list = load_sample_images("sample_images/", transform)
-    image = to_var(img_list[30], volatile=True)
+    image = img_list[30]
 
     # if torch.cuda.is_available():
     #     encoder = encoder.cuda()
