@@ -1,89 +1,151 @@
+import json
 import pickle
 import re
 from collections import Counter
+from typing import Dict, List, Optional
+from pathlib import Path
 
 import nltk
 
 
-class Vocab(object):
-    def __init__(self) -> None:
-        self.w2i = {}
-        self.i2w = {}
-        self.ix = 0
+DEFAULT_PADDING_TOKEN = "<pad>"
+DEFAULT_BOS_TOKEN = "<s>"
+DEFAULT_EOS_TOKEN = "</s>"
+DEFAULT_OOV_TOKEN = "<unk>"
 
-    def add_word(self, word: str) -> None:
-        if word not in self.w2i:
-            self.w2i[word] = self.ix
-            self.i2w[self.ix] = word
-            self.ix += 1
 
-    def __call__(self, word: str) -> int:
-        if word not in self.w2i:
-            return self.w2i["<unk>"]
-        return self.w2i[word]
+class Vocabulary(object):
+    def __init__(
+        self,
+        padding_token: Optional[str] = DEFAULT_PADDING_TOKEN,
+        oov_token: Optional[str] = DEFAULT_OOV_TOKEN,
+        bos_token: Optional[str] = DEFAULT_BOS_TOKEN,
+        eos_token: Optional[str] = DEFAULT_EOS_TOKEN
+    ) -> None:
+        self.padding_token = padding_token \
+            if padding_token is not None else DEFAULT_PADDING_TOKEN
+        self.oov_token = oov_token if oov_token is not None else DEFAULT_OOV_TOKEN
+        self.bos_token = bos_token if bos_token is not None else DEFAULT_BOS_TOKEN
+        self.eos_token = eos_token if eos_token is not None else DEFAULT_EOS_TOKEN
+        self.w2i = {
+            self.padding_token: 0,
+            self.oov_token: 1,
+            self.bos_token: 2,
+            self.eos_token: 3
+        }
+        self.i2w = self.generate_inverse_dict(self.w2i)
 
     def __len__(self) -> int:
         return len(self.w2i)
 
+    def build(self, sentences: List[List[str]], mincount: int = 1) -> "Vocabulary":
+        counter = {}
+        for sentence in sentences:
+            for token in sentence:
+                counter[token] = counter.get(token, 0) + 1
 
-def build_vocab(mode_list=["factual", "humorous"]) -> Vocab:
-    # define vocabulary
-    vocab = Vocab()
-    # add special tokens
-    vocab.add_word("<pad>")
-    vocab.add_word("<s>")
-    vocab.add_word("</s>")
-    vocab.add_word("<unk>")
+        for token, count in sorted(counter.items(), key=lambda x: x[1], reverse=True):
+            if count < mincount:
+                break
+            index = len(self.w2i)
+            self.w2i[token] = index
+            self.i2w[index] = token
+        return self
 
-    # add words
-    for mode in mode_list:
-        if mode == "factual":
-            captions = extract_captions(mode=mode)
-            words = nltk.tokenize.word_tokenize(captions)
-            counter = Counter(words)
-            words = [word for word, cnt in counter.items() if cnt >= 2]
-        else:
-            captions = extract_captions(mode=mode)
-            words = nltk.tokenize.word_tokenize(captions)
+    def add(self, token: str) -> None:
+        index = len(self.w2i)
+        val = self.w2i.setdefault(token, index)
+        if val == index:
+            self.i2w[index] = token
 
-        for word in words:
-            vocab.add_word(word)
+    def get_index(self, token: str) -> int:
+        return self.w2i.get(token, self.w2i[self.oov_token])
 
+    def get_token(self, index: int) -> str:
+        vocab_size = len(self.i2w)
+        if index >= vocab_size:
+            raise IndexError(f"Vocabulary size is {vocab_size}, got {index} as index")
+        return self.i2w[index]
+
+    def get_dict(self) -> Dict[str, int]:
+        return self.w2i.copy()
+
+    def generate_inverse_dict(self, w2i: Dict[str, int]) -> Dict[int, str]:
+        i2w = {}
+        for k, v in w2i.items():
+            i2w[v] = k
+        return i2w
+
+    def extend_from_vocab(self, vocab: "Vocabulary") -> None:
+        for token in vocab.w2i.keys():
+            self.add(token)
+
+    def load(self, path: Path) -> None:
+        with open(path, "r") as f:
+            self.w2i = json.load(f)
+        self.i2w = self.generate_inverse_dict(self.w2i)
+
+    def save(self, path: Path) -> None:
+        with open(path, "w") as f:
+            json.dump(self.w2i, f, ensure_ascii=False, indent=4)
+
+
+def build_vocab(
+    factual_caption_path: Path,
+    humorous_caption_path: Optional[Path] = None,
+    romantic_caption_path: Optional[Path] = None
+) -> Vocabulary:
+    vocab = Vocabulary()
+    factual_captions = extract_factual_captions(factual_caption_path)
+    vocab.build(factual_captions, mincount=2)
+    if humorous_caption_path:
+        vocab_humor = Vocabulary()
+        humorous_captions = extract_styled_captions(humorous_caption_path)
+        vocab_humor.build(humorous_captions, mincount=1)
+        vocab.extend_from_vocab(vocab_humor)
+    if romantic_caption_path:
+        vocab_romantic = Vocabulary()
+        romantic_captions = extract_styled_captions(romantic_caption_path)
+        vocab_romantic.build(romantic_captions, mincount=1)
+        vocab.extend_from_vocab(vocab_romantic)
     return vocab
 
 
-def extract_captions(mode="factual") -> str:
-    """extract captions from data files for building vocabulary"""
-    text = ""
-    if mode == "factual":
-        with open("data/factual_train.txt", "r") as f:
-            res = f.readlines()
+def extract_factual_captions(
+    file_path: Path = Path("data/factual_train.txt")
+) -> List[List[str]]:
+    with open(file_path, "r") as f:
+        lines = f.readlines()
 
-        r = re.compile(r"\d*.jpg#\d*")
-        for line in res:
-            line = r.sub("", line)
-            line = line.replace(".", "")
-            line = line.strip()
-            text += line + " "
+    captions = []
+    pattern = re.compile(r"\d*.jpg#\d*")
+    for line in lines:
+        line = pattern.sub("", line)
+        line = line.replace(".", "")
+        line = line.strip()
+        words = nltk.tokenize.word_tokenize(line)
+        captions.append(words)
+    return captions
 
-    else:
-        if mode == "humorous":
-            with open("data/humor/funny_train.txt", "r") as f:
-                res = f.readlines()
-        else:
-            with open("data/romantic/romantic_train.txt", "r") as f:
-                res = f.readlines()
 
-        for line in res:
-            line = line.replace(".", "")
-            line = line.strip()
-            text += line + " "
+def extract_styled_captions(
+    file_path: Path = Path("data/humor/funny_train.txt")
+) -> List[List[str]]:
+    with open(file_path, "r") as f:
+        lines = f.readlines()
 
-    return text.strip().lower()
+    captions = []
+    for line in lines:
+        line = line.replace(".", "")
+        line = line.strip()
+        words = nltk.tokenize.word_tokenize(line)
+        captions.append(words)
+    return captions
 
 
 if __name__ == "__main__":
-    vocab = build_vocab(mode_list=["factual", "humorous"])
-    print(vocab.__len__())
-    with open("data/vocab.pkl", "wb") as f:
-        pickle.dump(vocab, f)
+    factual_caption_path = Path("data/factual_train.txt")
+    humorous_caption_path = Path("data/humor/funny_train.txt")
+    vocab_save_path = Path("data/vocab.json")
+    vocab = build_vocab(factual_caption_path, humorous_caption_path)
+    vocab.save(vocab_save_path)
