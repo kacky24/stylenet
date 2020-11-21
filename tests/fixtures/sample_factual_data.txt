@@ -1,0 +1,4 @@
+0.jpg#0    zoo had a dog .
+1.jpg#0    zoo had a cat .
+0.jpg#1    the had a dog .
+1.jpg#1    zoo had a bird .
