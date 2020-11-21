@@ -1,5 +1,5 @@
-import pickle
-from typing import Callable, List, Tuple
+from pathlib import Path
+from typing import Callable, List, Tuple, Optional
 
 import numpy as np
 
@@ -11,17 +11,17 @@ from torchvision import transforms
 from src.data.dataset import Flickr7kDataset
 from src.data.dataset import FlickrStyle7kDataset
 from src.data.transforms import Rescale
-from src.utils.vocab import Vocab
+from src.utils.vocab import Vocabulary
 
 
-def get_data_loader(
-    img_dir: str,
-    caption_file: str,
-    vocab: Vocab,
+def get_factual_data_loader(
+    img_dir: Path,
+    caption_path: Path,
+    vocab: Vocabulary,
     batch_size: int,
-    transform: Callable([np.ndarray], np.ndarray) = None,
-    shuffle=False,
-    num_workers=0
+    transform: Optional[Callable[[np.ndarray], np.ndarray]] = None,
+    shuffle: bool = False,
+    num_workers: int = 0
 ) -> DataLoader:
     if transform is None:
         transform = transforms.Compose([
@@ -29,24 +29,24 @@ def get_data_loader(
             transforms.ToTensor()
         ])
 
-    flickr7k = Flickr7kDataset(img_dir, caption_file, vocab, transform)
+    flickr7k = Flickr7kDataset(img_dir, caption_path, vocab, transform)
 
     data_loader = DataLoader(dataset=flickr7k,
                              batch_size=batch_size,
                              shuffle=shuffle,
                              num_workers=num_workers,
-                             collate_fn=collate_fn)
+                             collate_fn=collate_fn_factual)
     return data_loader
 
 
 def get_styled_data_loader(
-    caption_file: str,
-    vocab: Vocab,
+    caption_path: Path,
+    vocab: Vocabulary,
     batch_size: int,
     shuffle: bool = False,
     num_workers: int = 0
 ) -> DataLoader:
-    flickr_styled_7k = FlickrStyle7kDataset(caption_file, vocab)
+    flickr_styled_7k = FlickrStyle7kDataset(caption_path, vocab)
 
     data_loader = DataLoader(dataset=flickr_styled_7k,
                              batch_size=batch_size,
@@ -56,7 +56,7 @@ def get_styled_data_loader(
     return data_loader
 
 
-def collate_fn(data: List[Tuple[np.ndarray]]) -> Tuple[torch.Tensor]:
+def collate_fn_factual(data: List[Tuple[np.ndarray]]) -> Tuple[torch.Tensor]:
     """
     create minibatch tensors from data(list of tuple(image, caption))
     """
@@ -91,14 +91,15 @@ def pad_sequence(seq: torch.Tensor, max_len: int) -> torch.Tensor:
 
 
 if __name__ == "__main__":
-    with open("data/vocab.pkl", "rb") as f:
-        vocab = pickle.load(f)
+    vocab = Vocabulary()
+    vocab.load("data/vocab.json")
 
-    img_path = "data/flickr7k_images"
-    cap_path = "data/factual_train.txt"
-    cap_path_styled = "data/humor/funny_train.txt"
-    data_loader = get_data_loader(img_path, cap_path, vocab, 3)
-    styled_data_loader = get_styled_data_loader(cap_path_styled, vocab, 3)
+    img_dir = Path("data/flickr7k_images")
+    factual_caption_path = Path("data/factual_train.txt")
+    styled_caption_path = Path("data/humor/funny_train.txt")
+    factual_data_loader = get_factual_data_loader(
+        img_dir, factual_caption_path, vocab, 3)
+    styled_data_loader = get_styled_data_loader(styled_caption_path, vocab, 3)
 
     for i, (captions, lengths) in enumerate(styled_data_loader):
         print(i)

@@ -1,5 +1,6 @@
 import os
 import re
+from pathlib import Path
 from typing import Callable, List, Tuple
 
 import nltk
@@ -12,15 +13,15 @@ import skimage.transform
 import torch
 from torch.utils.data import Dataset
 
-from src.utils.vocab import Vocab
+from src.utils.vocab import Vocabulary
 
 
 class Flickr7kDataset(Dataset):
     def __init__(
         self,
-        img_dir: str,
-        caption_file: str,
-        vocab: Vocab,
+        img_dir: Path,
+        caption_path: Path,
+        vocab: Vocabulary,
         transform: Callable[[np.ndarray], np.ndarray] = None
     ) -> None:
         """
@@ -31,12 +32,12 @@ class Flickr7kDataset(Dataset):
             transform: Optional transform to be applied
         """
         self.img_dir = img_dir
-        self.imgname_caption_list = self._get_imgname_and_caption(caption_file)
+        self.imgname_caption_list = self._get_imgname_and_caption(caption_path)
         self.vocab = vocab
         self.transform = transform
 
-    def _get_imgname_and_caption(self, caption_file: str) -> List[str]:
-        with open(caption_file, "r") as f:
+    def _get_imgname_and_caption(self, caption_path: Path) -> List[str]:
+        with open(caption_path, "r") as f:
             res = f.readlines()
 
         imgname_caption_list = []
@@ -64,25 +65,25 @@ class Flickr7kDataset(Dataset):
         r = re.compile("\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
         caption = []
-        caption.append(self.vocab("<s>"))
-        caption.extend([self.vocab(token) for token in tokens])
-        caption.append(self.vocab("</s>"))
+        caption.append(self.vocab.get_index("<s>"))
+        caption.extend([self.vocab.get_index(token) for token in tokens])
+        caption.append(self.vocab.get_index("</s>"))
         caption = torch.Tensor(caption)
         return image, caption
 
 
 class FlickrStyle7kDataset(Dataset):
-    def __init__(self, caption_file: str, vocab: Vocab) -> None:
+    def __init__(self, caption_path: Path, vocab: Vocabulary) -> None:
         """
         Args:
             caption_file: Path to styled caption file
             vocab: Vocab instance
         """
-        self.caption_list = self._get_caption(caption_file)
+        self.caption_list = self._get_caption(caption_path)
         self.vocab = vocab
 
-    def _get_caption(self, caption_file: str) -> List[str]:
-        with open(caption_file, "r") as f:
+    def _get_caption(self, caption_path: Path) -> List[str]:
+        with open(caption_path, "r") as f:
             caption_list = f.readlines()
 
         caption_list = [x.strip() for x in caption_list]
@@ -97,8 +98,8 @@ class FlickrStyle7kDataset(Dataset):
         r = re.compile("\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
         caption = []
-        caption.append(self.vocab("<s>"))
-        caption.extend([self.vocab(token) for token in tokens])
-        caption.append(self.vocab("</s>"))
+        caption.append(self.vocab.get_index("<s>"))
+        caption.extend([self.vocab.get_index(token) for token in tokens])
+        caption.append(self.vocab.get_index("</s>"))
         caption = torch.Tensor(caption)
         return caption
