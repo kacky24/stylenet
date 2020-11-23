@@ -1,5 +1,5 @@
 import sys
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -8,91 +8,73 @@ import torch.nn.functional as F
 from constant import get_symbol_id
 
 
+class DenseBlockInFL(nn.Module):
+    def __init__(self, input_dim: int, output_dim: int) -> None:
+        self.W_i = nn.Linear(input_dim, output_dim)
+        self.W_f = nn.Linear(input_dim, output_dim)
+        self.W_o = nn.Linear(input_dim, output_dim)
+        self.W_c = nn.Linear(input_dim, output_dim)
+
+    def forward(
+        self,
+        input_i: torch.Tensor,
+        input_f: torch.Tensor,
+        input_o: torch.Tensor,
+        input_c: torch.Tensor
+    ) -> Tuple[torch.Tensor]:
+        output_i = self.W_i(input_i)
+        output_f = self.W_f(input_f)
+        output_o = self.W_o(input_o)
+        output_c = self.W_c(input_c)
+        return output_i, output_f, output_o, output_c
+
+
 class FactoredLSTM(nn.Module):
     def __init__(
         self,
         emb_dim: int,
         hidden_dim: int,
         factored_dim: int,
-        vocab_size: int
+        vocab_size: int,
+        mode_list: List[str]
     ) -> None:
         super(FactoredLSTM, self).__init__()
         self.hidden_dim = hidden_dim
         self.vocab_size = vocab_size
-
+        assert "factual" in mode_list, "mode_list must have factual"
+        self.mode_list = mode_list
         # embedding
         self.B = nn.Embedding(vocab_size, emb_dim)
 
         # factored lstm weights
-        self.U_i = nn.Linear(factored_dim, hidden_dim)
-        self.S_fi = nn.Linear(factored_dim, factored_dim)
-        self.V_i = nn.Linear(emb_dim, factored_dim)
-        self.W_i = nn.Linear(hidden_dim, hidden_dim)
-
-        self.U_f = nn.Linear(factored_dim, hidden_dim)
-        self.S_ff = nn.Linear(factored_dim, factored_dim)
-        self.V_f = nn.Linear(emb_dim, factored_dim)
-        self.W_f = nn.Linear(hidden_dim, hidden_dim)
-
-        self.U_o = nn.Linear(factored_dim, hidden_dim)
-        self.S_fo = nn.Linear(factored_dim, factored_dim)
-        self.V_o = nn.Linear(emb_dim, factored_dim)
-        self.W_o = nn.Linear(hidden_dim, hidden_dim)
-
-        self.U_c = nn.Linear(factored_dim, hidden_dim)
-        self.S_fc = nn.Linear(factored_dim, factored_dim)
-        self.V_c = nn.Linear(emb_dim, factored_dim)
-        self.W_c = nn.Linear(hidden_dim, hidden_dim)
-
-        self.S_hi = nn.Linear(factored_dim, factored_dim)
-        self.S_hf = nn.Linear(factored_dim, factored_dim)
-        self.S_ho = nn.Linear(factored_dim, factored_dim)
-        self.S_hc = nn.Linear(factored_dim, factored_dim)
-
-        # self.S_ri = nn.Linear(factored_dim, factored_dim)
-        # self.S_rf = nn.Linear(factored_dim, factored_dim)
-        # self.S_ro = nn.Linear(factored_dim, factored_dim)
-        # self.S_rc = nn.Linear(factored_dim, factored_dim)
+        self.U = DenseBlockInFL(factored_dim, hidden_dim)
+        self.V = DenseBlockInFL(emb_dim, factored_dim)
+        self.W = DenseBlockInFL(hidden_dim, hidden_dim)
+        self.S_d = nn.ModuleDict({
+            k: DenseBlockInFL(factored_dim, factored_dim) for k in self.mode_list
+        })
 
         # weight for output
         self.C = nn.Linear(hidden_dim, vocab_size)
 
     def forward_step(
         self,
-        embedded: torch.Tensor,
-        h_0: torch.Tensor,
-        c_0: torch.Tensor,
+        input: torch.Tensor,
+        h_in: torch.Tensor,
+        c_in: torch.Tensor,
         mode: str
     ) -> Tuple[torch.Tensor]:
-        i = self.V_i(embedded)
-        f = self.V_f(embedded)
-        o = self.V_o(embedded)
-        c = self.V_c(embedded)
+        i, f, o, c = self.V(input, input, input, input)
+        i, f, o, c = self.S_d[mode](i, f, o, c)
+        i, f, o, c = self.U(i, f, o, c)
+        h_i, h_f, h_o, h_c = self.W(h_in, h_in, h_in, h_in)
 
-        if mode == "factual":
-            i = self.S_fi(i)
-            f = self.S_ff(f)
-            o = self.S_fo(o)
-            c = self.S_fc(c)
-        elif mode == "humorous":
-            i = self.S_hi(i)
-            f = self.S_hf(f)
-            o = self.S_ho(o)
-            c = self.S_hc(c)
-        # elif mode == "romantic":
-        #     i = self.S_ri(i)
-        #     f = self.S_rf(f)
-        #     o = self.S_ro(o)
-        #     c = self.S_rc(c)
-        else:
-            sys.stderr.write("mode name wrong!")
+        i_t = F.sigmoid(i + h_i)
+        f_t = F.sigmoid(f + h_f)
+        o_t = F.sigmoid(o + h_o)
+        c_tilda = F.tanh(c + h_c)
 
-        i_t = F.sigmoid(self.U_i(i) + self.W_i(h_0))
-        f_t = F.sigmoid(self.U_f(f) + self.W_f(h_0))
-        o_t = F.sigmoid(self.U_o(o) + self.W_o(h_0))
-        c_tilda = F.tanh(self.U_c(c) + self.W_c(h_0))
-
-        c_t = f_t * c_0 + i_t * c_tilda
+        c_t = f_t * c_in + i_t * c_tilda
         h_t = o_t * c_t
 
         outputs = self.C(h_t)
@@ -102,7 +84,7 @@ class FactoredLSTM(nn.Module):
     def forward(
         self,
         captions: torch.Tensor,
-        features: torch.Tensor = None,
+        image_features: Optional[torch.Tensor] = None,
         mode: str = "factual"
     ) -> torch.Tensor:
         """
@@ -115,19 +97,15 @@ class FactoredLSTM(nn.Module):
         embedded = self.B(captions)  # [batch, max_len, emb_dim]
         # concat features and captions
         if mode == "factual":
-            if features is None:
-                sys.stderr.write("features is None!")
-            embedded = torch.cat((features.unsqueeze(1), embedded), 1)
+            if image_features is None:
+                raise ValueError("No image features are given")
+            embedded = torch.cat((image_features.unsqueeze(1), embedded), 1)
 
         # initialize hidden state
         h_t = torch.Tensor(batch_size, self.hidden_dim)
         c_t = torch.Tensor(batch_size, self.hidden_dim)
         nn.init.uniform(h_t)
         nn.init.uniform(c_t)
-
-        if torch.cuda.is_available():
-            h_t = h_t.cuda()
-            c_t = c_t.cuda()
 
         all_outputs = []
         # iterate
@@ -140,7 +118,7 @@ class FactoredLSTM(nn.Module):
 
         return all_outputs
 
-    def sample(
+    def beam_search(
         self,
         feature: torch.Tensor,
         beam_size: int = 5,
@@ -162,17 +140,11 @@ class FactoredLSTM(nn.Module):
         nn.init.uniform(h_t)
         nn.init.uniform(c_t)
 
-        # if torch.cuda.is_available():
-        #     h_t = h_t.cuda()
-        #     c_t = c_t.cuda()
-
         # forward 1 step
         _, h_t, c_t = self.forward_step(feature, h_t, c_t, mode=mode)
 
         # candidates: [score, decoded_sequence, h_t, c_t]
         symbol_id = torch.LongTensor([1]).unsqueeze(0)
-        # if torch.cuda.is_available():
-        #     symbol_id = symbol_id.cuda()
         candidates = [[0, symbol_id, h_t, c_t, [get_symbol_id("<s>")]]]
 
         # beam search
