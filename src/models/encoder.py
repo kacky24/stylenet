@@ -18,8 +18,6 @@ class EncoderCNN(nn.Module):
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         features = self.resnet(images)
-        # if torch.cuda.is_available():
-        #     features = features.cuda()
         features = features.view(features.size(0), -1)
         features = self.A(features)
         return features

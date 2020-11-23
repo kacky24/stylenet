@@ -2,7 +2,6 @@ from typing import List
 
 import torch
 import torch.nn.functional as F
-from torch.autograd import Variable
 
 
 def sequence_mask(sequence_length: int, max_len: int = None) -> List[bool]:
@@ -11,7 +10,6 @@ def sequence_mask(sequence_length: int, max_len: int = None) -> List[bool]:
     batch_size = sequence_length.size(0)
     seq_range = torch.range(0, max_len - 1).long()
     seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
-    seq_range_expand = Variable(seq_range_expand)
     if sequence_length.is_cuda:
         seq_range_expand = seq_range_expand.cuda()
     seq_length_expand = (sequence_length.unsqueeze(1)
@@ -24,7 +22,6 @@ def masked_cross_entropy(
     target: torch.Tensor,
     length: torch.Tensor
 ) -> torch.Tensor:
-    length = Variable(length)
     if torch.cuda.is_available():
         length = length.cuda()
 
@@ -61,6 +58,5 @@ def masked_cross_entropy(
 
 if __name__ == "__main__":
     length = torch.LongTensor([23, 21, 17])
-    length = Variable(length)
 
     print(sequence_mask(length))
