@@ -21,6 +21,7 @@ class StyleNet(nn.Module):
         self.encoder = EncoderCNN(emb_dim)
         self.decoder = FactoredLSTM(
             emb_dim, hidden_dim, factored_dim, vocab_size, mode_list)
+        self.mode_list = mode_list
 
     def forward(
         self,
@@ -30,6 +31,7 @@ class StyleNet(nn.Module):
         mode: str = "factual"
     ) -> torch.Tensor:
         assert bool(images) is not bool(mode == "factual")
+        assert mode in self.mode_list
         if mode == "factual":
             outputs = self.forward_factual(captions, images)
             loss = masked_cross_entropy(
@@ -46,12 +48,16 @@ class StyleNet(nn.Module):
             )
         return loss
 
-    def forward_factual(self, captions: torch.Tensor, images: torch.Tensor):
+    def forward_factual(
+        self,
+        captions: torch.Tensor,
+        images: torch.Tensor
+    ) -> torch.Tensor:
         image_features = self.encoder(images)
         outputs = self.decoder(captions, image_features)
         return outputs
 
-    def forward_styled(self, captions: torch.Tensor):
+    def forward_styled(self, captions: torch.Tensor) -> torch.Tensor:
         outputs = self.decoder(captions)
         return outputs
 
