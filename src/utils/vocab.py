@@ -92,22 +92,17 @@ class Vocabulary(object):
 
 def build_vocab(
     factual_caption_path: Path,
-    humorous_caption_path: Optional[Path] = None,
-    romantic_caption_path: Optional[Path] = None
+    styled_caption_path_list: List[Path]
 ) -> Vocabulary:
     vocab = Vocabulary()
     factual_captions = extract_factual_captions(factual_caption_path)
     vocab.build(factual_captions, mincount=2)
-    if humorous_caption_path:
-        vocab_humor = Vocabulary()
-        humorous_captions = extract_styled_captions(humorous_caption_path)
-        vocab_humor.build(humorous_captions, mincount=1)
-        vocab.extend_from_vocab(vocab_humor)
-    if romantic_caption_path:
-        vocab_romantic = Vocabulary()
-        romantic_captions = extract_styled_captions(romantic_caption_path)
-        vocab_romantic.build(romantic_captions, mincount=1)
-        vocab.extend_from_vocab(vocab_romantic)
+
+    for caption_path in styled_caption_path_list:
+        vocab_styled = Vocabulary()
+        styled_captions = extract_styled_captions(caption_path)
+        vocab_styled.build(styled_captions, mincount=1)
+        vocab.extend_from_vocab(vocab_styled)
     return vocab
 
 
