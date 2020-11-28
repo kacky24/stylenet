@@ -1,6 +1,8 @@
 # custom
-/data
-/pretrained_models
+/data/*
+!.gitkeep
+/models/*
+!.gitkeep
 
 # python
 .python-version
