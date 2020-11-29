@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import torch
 from torch.utils.data import DataLoader
@@ -16,9 +16,12 @@ class Trainer(object):
         mode_list: List[str],
         num_epochs: int,
         log_steps: int,
-        save_dir: Path
+        save_dir: Path,
+        device: Optional[torch.device] = None
     ) -> None:
-        self.model = model
+        if not device:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = model.to(self.device)
         self.optimizer_map = optimizer_map
         self.data_loader_map = data_loader_map
         self.mode_list = mode_list
@@ -40,6 +43,9 @@ class Trainer(object):
         optimizer = self.optimizer_map[mode]
         total_steps = len(data_loader)
         for i, (images, captions, lengths) in enumerate(data_loader):
+            images = images.to(self.device)
+            captions = captions.to(self.device)
+            lengths = lengths.to(self.device)
             self.model.zero_grad()
             loss = self.model(captions, lengths, images, mode=mode)
             loss.backward()
@@ -53,6 +59,8 @@ class Trainer(object):
         optimizer = self.optimizer_map[mode]
         total_steps = len(data_loader)
         for i, (captions, lengths) in enumerate(data_loader):
+            captions = captions.to(self.device)
+            lengths = lengths.to(self.device)
             self.model.zero_grad()
             loss = self.model(captions, lengths, mode=mode)
             loss.backward()
