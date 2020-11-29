@@ -11,6 +11,7 @@ torch = "^1.7.0"
 torchvision = "^0.8.1"
 nltk = "^3.5"
 scikit-image = "^0.17.2"
+click = "^7.1.2"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"
