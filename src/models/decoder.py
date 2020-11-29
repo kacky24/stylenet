@@ -1,11 +1,8 @@
-import sys
 from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from constant import get_symbol_id
 
 
 class DenseBlockInFL(nn.Module):
@@ -123,7 +120,9 @@ class FactoredLSTM(nn.Module):
         feature: torch.Tensor,
         beam_size: int = 5,
         max_len: int = 30,
-        mode: str = "factual"
+        mode: str = "factual",
+        bos_id: int = 2,
+        eos_id: int = 3
     ) -> torch.Tensor:
         """
         generate captions from feature vectors with beam search
@@ -145,7 +144,7 @@ class FactoredLSTM(nn.Module):
 
         # candidates: [score, decoded_sequence, h_t, c_t]
         symbol_id = torch.LongTensor([1]).unsqueeze(0)
-        candidates = [[0, symbol_id, h_t, c_t, [get_symbol_id("<s>")]]]
+        candidates = [[0, symbol_id, h_t, c_t, [bos_id]]]
 
         # beam search
         t = 0
@@ -154,7 +153,7 @@ class FactoredLSTM(nn.Module):
             tmp_candidates = []
             end_flag = True
             for score, last_id, h_t, c_t, id_seq in candidates:
-                if id_seq[-1] == get_symbol_id("</s>"):
+                if id_seq[-1] == eos_id:
                     tmp_candidates.append([score, last_id, h_t, c_t, id_seq])
                 else:
                     end_flag = False

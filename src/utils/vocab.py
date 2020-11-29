@@ -1,9 +1,7 @@
 import json
-import pickle
 import re
-from collections import Counter
-from typing import Dict, List, Optional
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import nltk
 
