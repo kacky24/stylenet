@@ -1,0 +1,19 @@
+{
+    "model_dir": "./models/",
+    "vocab_path": "./models/vocab.json",
+    "img_dir": "./data/flickr7k_images",
+    "caption_paths": {
+        "factual": "./data/factual_train.txt",
+        "humorous": "./data/humor/funny_train.txt"
+    },
+    "factual_batch_size": 64,
+    "styled_batch_size": 96,
+    "emb_dim": 300,
+    "hidden_dim": 512,
+    "factored_dim": 512,
+    "lr_factual": 0.0002,
+    "lr_styled": 0.0005,
+    "num_epochs": 30,
+    "log_steps": 1000
+} 
+
