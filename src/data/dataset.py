@@ -62,7 +62,7 @@ class Flickr7kDataset(Dataset):
             image = self.transform(image)
 
         # convert caption to word ids
-        r = re.compile("\.")
+        r = re.compile(r"\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
         caption = []
         caption.append(self.vocab.get_index("<s>"))
@@ -95,7 +95,7 @@ class FlickrStyle7kDataset(Dataset):
     def __getitem__(self, ix: int) -> torch.Tensor:
         caption = self.caption_list[ix]
         # convert caption to word ids
-        r = re.compile("\.")
+        r = re.compile(r"\.")
         tokens = nltk.tokenize.word_tokenize(r.sub("", caption).lower())
         caption = []
         caption.append(self.vocab.get_index("<s>"))

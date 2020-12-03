@@ -88,24 +88,3 @@ def collate_fn_styled(captions: List[np.ndarray]):
 def pad_sequence(seq: torch.Tensor, max_len: int) -> torch.Tensor:
     seq = torch.cat((seq, torch.zeros(max_len - len(seq))))
     return seq
-
-
-if __name__ == "__main__":
-    vocab = Vocabulary()
-    vocab.load("data/vocab.json")
-
-    img_dir = Path("data/flickr7k_images")
-    factual_caption_path = Path("data/factual_train.txt")
-    styled_caption_path = Path("data/humor/funny_train.txt")
-    factual_data_loader = get_factual_data_loader(
-        img_dir, factual_caption_path, vocab, 3)
-    styled_data_loader = get_styled_data_loader(styled_caption_path, vocab, 3)
-
-    for i, (captions, lengths) in enumerate(styled_data_loader):
-        print(i)
-        # print(images.shape)
-        print(captions[:, 1:])
-        print(lengths - 1)
-        print()
-        if i == 3:
-            break

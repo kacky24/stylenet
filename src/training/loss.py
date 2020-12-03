@@ -54,9 +54,3 @@ def masked_cross_entropy(
     losses = losses * mask.float()
     loss = losses.sum() / length.float().sum()
     return loss
-
-
-if __name__ == "__main__":
-    length = torch.LongTensor([23, 21, 17])
-
-    print(sequence_mask(length))

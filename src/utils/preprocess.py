@@ -12,7 +12,7 @@ def select_7k_images(c_type: str = "humor") -> None:
 
     # extract img names
     img_list = []
-    r = re.compile("\d*_")
+    r = re.compile(r"\d*_")
     for line in res:
         if len(line) < 10:
             continue
@@ -36,7 +36,7 @@ def select_factual_captions() -> None:
 
     # write out
     with open("data/factual_train.txt", "w") as f:
-        r = re.compile("\d*.jpg")
+        r = re.compile(r"\d*.jpg")
         for line in res:
             img = r.search(line)
             img = img.group(0)
