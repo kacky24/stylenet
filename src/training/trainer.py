@@ -1,3 +1,4 @@
+from logging import getLogger
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -5,6 +6,9 @@ import torch
 from torch.utils.data import DataLoader
 
 from src.models.sytlenet import StyleNet
+
+
+logger = getLogger(__name__)
 
 
 class Trainer(object):
@@ -67,24 +71,13 @@ class Trainer(object):
             optimizer.step()
 
             if i % self.log_steps == 0:
-                self.print_log(mode, epoch, i, total_steps, loss.data.mean())
+                logger.info(
+                    f"Mode: {mode} Epoch: {epoch} Step: {i}/{total_steps} "
+                    f"Loss: {loss.data.item(): .4f}"
+                )
 
     def test(self):
         pass
-
-    def print_log(
-        self,
-        mode: str,
-        epoch: int,
-        steps: int,
-        total_steps: int,
-        loss_value: float
-    ) -> None:
-        message = f"""
-            Epoch [{epoch}/{self.num_epochs}], Mode [{mode}],
-            Step [{steps}/{total_steps}], Loss: {loss_value: .4f}
-        """
-        print(message)
 
     def save(self, epoch: int) -> None:
         torch.save(self.model.state_dict(), self.save_dir / f"model-{epoch}.pth")

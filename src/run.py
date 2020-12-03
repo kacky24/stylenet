@@ -1,4 +1,5 @@
 import json
+import logging
 import sys
 from pathlib import Path
 
@@ -7,12 +8,13 @@ import click
 import torch
 
 sys.path.append("./")
+logging.basicConfig(level=logging.DEBUG)
 
-import src.utils.vocab
 from src.data.loader import get_factual_data_loader, get_styled_data_loader
 from src.models import StyleNet
 from src.training.trainer import Trainer
 from src.utils.vocab import Vocabulary
+from src.utils.vocab import build_vocab as _build_vocab
 
 
 @click.group()
@@ -31,7 +33,7 @@ def build_vocab(ctx):
     caption_paths = ctx.obj["caption_paths"].copy()
     factual_caption_path = Path(caption_paths.pop("factual"))
     styled_caption_path_list = list(map(Path, caption_paths.values()))
-    vocab = src.utils.vocab.build_vocab(factual_caption_path, styled_caption_path_list)
+    vocab = _build_vocab(factual_caption_path, styled_caption_path_list)
     vocab.save(vocab_path)
 
 
