@@ -53,7 +53,8 @@ def train(ctx):
     model_dir = config["model_dir"]
     lr_factual = config["lr_factual"]
     lr_styled = config["lr_styled"]
-    vocab = Vocabulary.load(vocab_path)
+    vocab = Vocabulary()
+    vocab.load(vocab_path)
     caption_paths = config["caption_paths"]
     mode_list = list(caption_paths.keys())
     styled_mode_list = mode_list.copy()
