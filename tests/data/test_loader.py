@@ -12,7 +12,7 @@ from src.utils.vocab import build_vocab
 def vocab():
     factual_caption_path = Path("./tests/fixtures/sample_factual_data.txt")
     styled_caption_path = Path("./tests/fixtures/sample_styled_data.txt")
-    vocab = build_vocab(factual_caption_path, styled_caption_path)
+    vocab = build_vocab(factual_caption_path, [styled_caption_path])
     return vocab
 
 
