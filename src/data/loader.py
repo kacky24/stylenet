@@ -86,5 +86,5 @@ def collate_fn_styled(captions: List[np.ndarray]):
 
 
 def pad_sequence(seq: torch.Tensor, max_len: int) -> torch.Tensor:
-    seq = torch.cat((seq, torch.zeros(max_len - len(seq))))
+    seq = torch.cat((seq, torch.zeros(max_len - len(seq), dtype=torch.long)))
     return seq

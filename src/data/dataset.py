@@ -57,7 +57,7 @@ class Flickr7kDataset(Dataset):
         img_name = os.path.join(self.img_dir, img_name)
         caption = self.imgname_caption_list[ix][1]
 
-        image = skimage.io.imread(img_name)
+        image = skimage.io.imread(img_name).astype(np.float32)
         if self.transform is not None:
             image = self.transform(image)
 
@@ -68,7 +68,7 @@ class Flickr7kDataset(Dataset):
         caption.append(self.vocab.get_index("<s>"))
         caption.extend([self.vocab.get_index(token) for token in tokens])
         caption.append(self.vocab.get_index("</s>"))
-        caption = torch.Tensor(caption)
+        caption = torch.LongTensor(caption)
         return image, caption
 
 
@@ -101,5 +101,5 @@ class FlickrStyle7kDataset(Dataset):
         caption.append(self.vocab.get_index("<s>"))
         caption.extend([self.vocab.get_index(token) for token in tokens])
         caption.append(self.vocab.get_index("</s>"))
-        caption = torch.Tensor(caption)
+        caption = torch.LongTensor(caption)
         return caption
