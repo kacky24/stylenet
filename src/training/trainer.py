@@ -56,7 +56,10 @@ class Trainer(object):
             optimizer.step()
 
             if i % self.log_steps == 0:
-                self.print_log(mode, epoch, i, total_steps, loss.data.mean())
+                logger.info(
+                    f"Mode: {mode} Epoch: {epoch} Step: {i}/{total_steps} "
+                    f"Loss: {loss.data.item(): .4f}"
+                )
 
     def fit_styled_epoch(self, epoch: int, mode: str) -> None:
         data_loader = self.data_loader_map[mode]
