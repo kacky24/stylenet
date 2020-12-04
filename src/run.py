@@ -73,7 +73,8 @@ def train(ctx):
             caption_paths[k], vocab, styled_batch_size, shuffle=True
         )
     model = StyleNet(emb_dim, hidden_dim, factored_dim, len(vocab), mode_list)
-    factual_params = list(model.decoder.parameters(), model.encoder.A.parameters())
+    factual_params = list(model.decoder.parameters()) + \
+        list(model.encoder.A.parameters())
     optimizer_map = {"factual": torch.optim.Adam(factual_params, lr=lr_factual)}
     for k in styled_mode_list:
         styled_params = list(model.decoder.S_d[k].parameters())
