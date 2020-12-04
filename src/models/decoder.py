@@ -67,10 +67,10 @@ class FactoredLSTM(nn.Module):
         i, f, o, c = self.U(i, f, o, c)
         h_i, h_f, h_o, h_c = self.W(h_in, h_in, h_in, h_in)
 
-        i_t = F.sigmoid(i + h_i)
-        f_t = F.sigmoid(f + h_f)
-        o_t = F.sigmoid(o + h_o)
-        c_tilda = F.tanh(c + h_c)
+        i_t = torch.sigmoid(i + h_i)
+        f_t = torch.sigmoid(f + h_f)
+        o_t = torch.sigmoid(o + h_o)
+        c_tilda = torch.tanh(c + h_c)
 
         c_t = f_t * c_in + i_t * c_tilda
         h_t = o_t * c_t
@@ -102,8 +102,8 @@ class FactoredLSTM(nn.Module):
         # initialize hidden state
         h_t = torch.Tensor(batch_size, self.hidden_dim)
         c_t = torch.Tensor(batch_size, self.hidden_dim)
-        nn.init.uniform(h_t)
-        nn.init.uniform(c_t)
+        nn.init.uniform_(h_t)
+        nn.init.uniform_(c_t)
 
         all_outputs = []
         # iterate
@@ -137,8 +137,8 @@ class FactoredLSTM(nn.Module):
         # initialize hidden state
         h_t = torch.Tensor(1, self.hidden_dim)
         c_t = torch.Tensor(1, self.hidden_dim)
-        nn.init.uniform(h_t)
-        nn.init.uniform(c_t)
+        nn.init.uniform_(h_t)
+        nn.init.uniform_(c_t)
 
         # forward 1 step
         _, h_t, c_t = self.forward_step(feature, h_t, c_t, mode=mode)
@@ -162,7 +162,7 @@ class FactoredLSTM(nn.Module):
                     output, h_t, c_t = self.forward_step(emb, h_t, c_t, mode=mode)
                     output = output.squeeze(0).squeeze(0)
                     # log softmax
-                    output = F.log_softmax(output)
+                    output = F.log_softmax(output, dim=1)
                     output, indices = torch.sort(output, descending=True)
                     output = output[:beam_size]
                     indices = indices[:beam_size]

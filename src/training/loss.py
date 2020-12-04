@@ -8,7 +8,7 @@ def sequence_mask(sequence_length: int, max_len: int = None) -> List[bool]:
     if max_len is None:
         max_len = sequence_length.data.max()
     batch_size = sequence_length.size(0)
-    seq_range = torch.range(0, max_len - 1).long()
+    seq_range = torch.arange(0, max_len).long()
     seq_range_expand = seq_range.unsqueeze(0).expand(batch_size, max_len)
     if sequence_length.is_cuda:
         seq_range_expand = seq_range_expand.cuda()
@@ -42,7 +42,7 @@ def masked_cross_entropy(
     # logits_flat: (batch * max_len, num_classes)
     logits_flat = logits.view(-1, logits.size(-1))
     # log_probs_flat: (batch * max_len, num_classes)
-    log_probs_flat = F.log_softmax(logits_flat)
+    log_probs_flat = F.log_softmax(logits_flat, dim=1)
     # target_flat: (batch * max_len, 1)
     target_flat = target.view(-1, 1)
     # losses_flat: (batch * max_len, 1)
