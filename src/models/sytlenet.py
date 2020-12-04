@@ -30,7 +30,7 @@ class StyleNet(nn.Module):
         images: Optional[torch.Tensor] = None,
         mode: str = "factual"
     ) -> torch.Tensor:
-        assert bool(images) is not bool(mode == "factual")
+        assert bool(images is None) is not bool(mode == "factual")
         assert mode in self.mode_list
         if mode == "factual":
             outputs = self.forward_factual(captions, images)
