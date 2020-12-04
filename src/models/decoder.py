@@ -7,6 +7,7 @@ import torch.nn.functional as F
 
 class DenseBlockInFL(nn.Module):
     def __init__(self, input_dim: int, output_dim: int) -> None:
+        super(DenseBlockInFL, self).__init__()
         self.W_i = nn.Linear(input_dim, output_dim)
         self.W_f = nn.Linear(input_dim, output_dim)
         self.W_o = nn.Linear(input_dim, output_dim)
