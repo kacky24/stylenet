@@ -8,7 +8,7 @@ import click
 import torch
 
 sys.path.append("./")
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 from src.data.loader import get_factual_data_loader, get_styled_data_loader
 from src.models import StyleNet
