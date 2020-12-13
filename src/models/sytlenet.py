@@ -33,7 +33,7 @@ class StyleNet(nn.Module):
         assert bool(images is None) is not bool(mode == "factual")
         assert mode in self.mode_list
         if mode == "factual":
-            outputs = self.forward_factual(captions, images)
+            outputs = self.forward_factual(captions, images, mode)
             loss = masked_cross_entropy(
                 outputs[:, 1:, :].contiguous(),
                 captions[:, 1:].contiguous(),
@@ -51,14 +51,15 @@ class StyleNet(nn.Module):
     def forward_factual(
         self,
         captions: torch.Tensor,
-        images: torch.Tensor
+        images: torch.Tensor,
+        mode: str
     ) -> torch.Tensor:
         image_features = self.encoder(images)
-        outputs = self.decoder(captions, image_features)
+        outputs = self.decoder(captions, image_features, mode)
         return outputs
 
-    def forward_styled(self, captions: torch.Tensor) -> torch.Tensor:
-        outputs = self.decoder(captions)
+    def forward_styled(self, captions: torch.Tensor, mode: str) -> torch.Tensor:
+        outputs = self.decoder(captions, mode)
         return outputs
 
     def beam_search(
