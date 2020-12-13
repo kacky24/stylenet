@@ -100,8 +100,8 @@ class FactoredLSTM(nn.Module):
             embedded = torch.cat((image_features.unsqueeze(1), embedded), 1)
 
         # initialize hidden state
-        h_t = torch.Tensor(batch_size, self.hidden_dim)
-        c_t = torch.Tensor(batch_size, self.hidden_dim)
+        h_t = torch.empty((batch_size, self.hidden_dim), device=captions.device)
+        c_t = torch.empty((batch_size, self.hidden_dim), device=captions.device)
         nn.init.uniform_(h_t)
         nn.init.uniform_(c_t)
 
