@@ -14,6 +14,8 @@ class EncoderCNN(nn.Module):
         resnet = models.resnet152(pretrained=True)
         modules = list(resnet.children())[:-1]
         self.resnet = nn.Sequential(*modules)
+        for param in self.resnet.parameters():
+            param.requires_grad = False
         self.A = nn.Linear(resnet.fc.in_features, emb_dim)
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
